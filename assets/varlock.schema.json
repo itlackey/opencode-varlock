@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/itlackey/opencode-varlock/assets/varlock.schema.json",
+  "title": "opencode-varlock config",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "$comment": {
+      "type": ["string", "array"],
+      "items": {
+        "type": "string"
+      }
+    },
+    "guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "$comment": {
+          "type": ["string", "array"],
+          "items": {
+            "type": "string"
+          }
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "sensitivePatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sensitiveGlobs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "bashDenyPatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "blockedReadTools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "blockedWriteTools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "env": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "$comment": {
+          "type": ["string", "array"],
+          "items": {
+            "type": "string"
+          }
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "allowedRoot": {
+          "type": "string"
+        }
+      }
+    },
+    "varlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "$comment": {
+          "type": ["string", "array"],
+          "items": {
+            "type": "string"
+          }
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "autoDetect": {
+          "type": "boolean"
+        },
+        "command": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

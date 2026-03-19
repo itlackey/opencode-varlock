@@ -1,0 +1,78 @@
+{
+  "name": "opencode-varlock",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "OpenCode plugin for secret management via Varlock with configurable env guard protection",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "default": "./dist/config.js"
+    },
+    "./guard": {
+      "types": "./dist/guard.d.ts",
+      "default": "./dist/guard.js"
+    },
+    "./tools": {
+      "types": "./dist/tools.d.ts",
+      "default": "./dist/tools.js"
+    },
+    "./plugin": {
+      "types": "./dist/plugin.d.ts",
+      "default": "./dist/plugin.js"
+    },
+    "./permissions": "./assets/permissions.json",
+    "./varlock.config.json": "./assets/varlock.config.json",
+    "./varlock.schema.json": "./assets/varlock.schema.json",
+    "./assets/permissions.json": "./assets/permissions.json",
+    "./assets/varlock.config.json": "./assets/varlock.config.json",
+    "./assets/varlock.schema.json": "./assets/varlock.schema.json"
+  },
+  "files": [
+    "dist/",
+    "assets/",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "opencode",
+    "opencode-ai",
+    "opencode-plugin",
+    "varlock",
+    "secrets",
+    "env",
+    "security",
+    "guard"
+  ],
+  "homepage": "https://github.com/itlackey/opencode-varlock#readme",
+  "bugs": {
+    "url": "https://github.com/itlackey/opencode-varlock/issues"
+  },
+  "scripts": {
+    "build": "tsc --project ./tsconfig.json",
+    "clean": "rm -rf ./dist",
+    "typecheck": "tsc --project ./tsconfig.json --noEmit",
+    "validate": "npm run typecheck && npm run build && npm pack --dry-run",
+    "prepublishOnly": "npm run clean && npm run validate"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "^1.2.20"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript": "^5.9.3"
+  },
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/itlackey/opencode-varlock"
+  }
+}

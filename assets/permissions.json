@@ -1,0 +1,156 @@
+{
+  "$comment": [
+    "Recommended permission sets for use with opencode-varlock.",
+    "Copy the tier that matches your threat model into your opencode.json.",
+    "All tiers assume the VarlockPlugin is active - the plugin's EnvGuard",
+    "hook provides the safety net beneath these permission rules."
+  ],
+
+  "standard": {
+    "$comment": "Good default for solo devs. Blocks obvious env reads, asks for everything else.",
+    "permission": {
+      "read": "ask",
+      "edit": "ask",
+      "bash": {
+        "cat *.env*": "deny",
+        "less *.env*": "deny",
+        "more *.env*": "deny",
+        "head *.env*": "deny",
+        "tail *.env*": "deny",
+        "grep * .env*": "deny",
+        "echo $*": "deny",
+        "printenv*": "deny",
+        "env": "deny",
+        "export -p": "deny",
+        "source .env*": "deny",
+        "npm test": "allow",
+        "npm run *": "allow",
+        "bun test": "allow",
+        "bun run *": "allow",
+        "git *": "allow",
+        "ls *": "allow",
+        "*": "ask"
+      }
+    }
+  },
+
+  "strict": {
+    "$comment": "For agents operating in shared or CI environments. Denies all secret-adjacent commands, asks for bash.",
+    "permission": {
+      "read": {
+        "*.env*": "deny",
+        "*.pem": "deny",
+        "*.key": "deny",
+        "*credentials*": "deny",
+        "*.pgpass": "deny",
+        "*": "ask"
+      },
+      "write": {
+        "*.env*": "deny",
+        "*.pem": "deny",
+        "*.key": "deny",
+        "*": "ask"
+      },
+      "edit": {
+        "*.env*": "deny",
+        "*.pem": "deny",
+        "*.key": "deny",
+        "*": "ask"
+      },
+      "bash": {
+        "cat *.env*": "deny",
+        "less *.env*": "deny",
+        "more *.env*": "deny",
+        "head *.env*": "deny",
+        "tail *.env*": "deny",
+        "grep * .env*": "deny",
+        "echo $*": "deny",
+        "printenv*": "deny",
+        "env": "deny",
+        "env *": "deny",
+        "export -p": "deny",
+        "declare -x": "deny",
+        "source .env*": "deny",
+        ". .env*": "deny",
+        "set -a*": "deny",
+        "curl *env*": "deny",
+        "wget *env*": "deny",
+        "npm test": "allow",
+        "npm run *": "allow",
+        "bun test": "allow",
+        "bun run *": "allow",
+        "git *": "allow",
+        "ls *": "allow",
+        "*": "ask"
+      }
+    }
+  },
+
+  "lockdown": {
+    "$comment": "Maximum restriction. Agent can only read code and use provided tools. No bash.",
+    "permission": {
+      "read": {
+        "*.env*": "deny",
+        "*.pem": "deny",
+        "*.key": "deny",
+        "*credentials*": "deny",
+        "*secret*": "deny",
+        "*": "allow"
+      },
+      "write": {
+        "*.env*": "deny",
+        "*.ts": "ask",
+        "*.js": "ask",
+        "*": "deny"
+      },
+      "edit": {
+        "*.env*": "deny",
+        "*.ts": "ask",
+        "*.js": "ask",
+        "*": "deny"
+      },
+      "bash": "deny",
+      "skill": "deny"
+    }
+  },
+
+  "agent_example": {
+    "$comment": "Example agent definition that uses the strict tier with load_env/load_secrets tools enabled.",
+    "agent": {
+      "deploy": {
+        "description": "Deployment agent with managed secret access",
+        "mode": "subagent",
+        "model": "anthropic/claude-sonnet-4-20250514",
+        "temperature": 0.1,
+        "tools": {
+          "load_env": true,
+          "load_secrets": true,
+          "secret_status": true,
+          "read": true,
+          "grep": true,
+          "write": true,
+          "edit": true,
+          "bash": true
+        },
+        "permission": {
+          "read": {
+            "*.env*": "deny",
+            "*.pem": "deny",
+            "*": "allow"
+          },
+          "bash": {
+            "cat *.env*": "deny",
+            "printenv*": "deny",
+            "echo $*": "deny",
+            "env": "deny",
+            "docker *": "allow",
+            "npm *": "allow",
+            "bun *": "allow",
+            "git *": "allow",
+            "*": "ask"
+          }
+        }
+      }
+    }
+  }
+}

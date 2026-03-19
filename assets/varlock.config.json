@@ -1,0 +1,53 @@
+{
+  "$schema": "./node_modules/opencode-varlock/assets/varlock.schema.json",
+  "$comment": "opencode-varlock configuration. Place in project root or .opencode/",
+
+  "guard": {
+    "$comment": "EnvGuard - the tool.execute.before hook that blocks secret exfiltration",
+
+    "enabled": true,
+
+    "sensitivePatterns": [
+      ".env",
+      ".secret",
+      ".pem",
+      ".key",
+      "credentials",
+      ".pgpass"
+    ],
+
+    "sensitiveGlobs": [
+      "**/.env",
+      "**/.env.*",
+      "**/.env.local",
+      "**/.env.production",
+      "**/*.pem",
+      "**/*.key",
+      "**/credentials",
+      "**/credentials.*",
+      "**/.pgpass",
+      "secrets/**"
+    ],
+
+    "bashDenyPatterns": [],
+
+    "blockedReadTools": ["read", "grep", "glob", "view"],
+    "blockedWriteTools": ["write", "edit"]
+  },
+
+  "env": {
+    "$comment": "load_env tool - parses .env files into process.env",
+
+    "enabled": true,
+    "allowedRoot": "."
+  },
+
+  "varlock": {
+    "$comment": "Varlock integration - pull secrets from pass, Azure KV, AWS, 1Password, etc.",
+
+    "enabled": false,
+    "autoDetect": true,
+    "command": "varlock",
+    "namespace": "app"
+  }
+}
