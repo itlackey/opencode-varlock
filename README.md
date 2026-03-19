@@ -349,4 +349,4 @@ regex.test("config/.env.production") // true
 
 ## License
 
-MIT
+MPL-2.0
