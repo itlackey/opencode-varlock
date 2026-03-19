@@ -54,7 +54,7 @@ jobs:
             npm version patch --no-git-tag-version
           fi
 
-          VERSION="$(node -p \"require('./package.json').version\")"
+          VERSION="$(node -p "require('./package.json').version")"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
@@ -76,7 +76,7 @@ jobs:
 
       - name: Publish to npm
         run: npm publish --access public
-
+        
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
