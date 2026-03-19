@@ -1,6 +1,6 @@
 {
   "name": "opencode-varlock",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "description": "OpenCode plugin for secret management via Varlock with configurable env guard protection",
   "main": "./dist/index.js",
