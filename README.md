@@ -316,7 +316,7 @@ These permission rules complement the EnvGuard hook — the rules handle fast-pa
 
 ### Why three layers?
 
-**Permissions alone aren't enough.** An agent can try `python3 -c "print(open('.env').read())"` — the glob `cat *.env*` won't catch it.
+**Permissions alone aren't enough.** An agent can try `python3 -c "print(open('.env').read())"` or `python -c "import os; print(os.getenv('API_KEY'))"` - the obvious glob rules won't catch every runtime exfiltration path.
 
 **Prompt instructions alone aren't enough.** Telling an agent "never read .env" is a soft boundary the model can reason past.
 
@@ -329,6 +329,7 @@ These permission rules complement the EnvGuard hook — the rules handle fast-pa
 ✓ Writes code: const db = new Client(process.env.DATABASE_URL)
 ✗ cat .env              → Blocked: deny pattern
 ✗ echo $API_KEY         → Blocked: deny pattern
+✗ python -c "os.getenv" → Blocked: runtime env read
 ✗ python -c "open..."   → Blocked: sensitive file
 ✗ jq . secrets/app.json → Blocked: matches glob "secrets/**"
 ```

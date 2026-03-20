@@ -28,6 +28,10 @@ const BUILTIN_BASH_DENY = [
   "declare -x",
   "process.env",
   "os.environ",
+  "os.getenv(",
+  "getenv(",
+  "system.getenv(",
+  "deno.env.get(",
   "dotenv",
   "source .env",
   ". .env",
@@ -46,6 +50,18 @@ const BUILTIN_BASH_DENY = [
 type ToolInput = { tool: string }
 type ToolOutput = { args: Record<string, any> }
 type CompiledGlob = { source: string; regex: RegExp }
+
+const ENV_VALUE_READ_PATTERNS = [
+  /\bpython\d*\b[\s\S]*\bos\.getenv\s*\(/i,
+  /\bpython\d*\b[\s\S]*\bos\.environ(?:\s*\[|\s*\.get\s*\()/i,
+  /\bnode\b[\s\S]*\bprocess\.env(?:\.[a-zA-Z_][a-zA-Z0-9_]*|\s*\[)/i,
+  /\bbun\b[\s\S]*\bprocess\.env(?:\.[a-zA-Z_][a-zA-Z0-9_]*|\s*\[)/i,
+  /\bdeno\b[\s\S]*\bDeno\.env\.get\s*\(/i,
+  /\bruby\b[\s\S]*\bENV(?:\s*\[|\.fetch\s*\()/i,
+  /\bphp\b[\s\S]*\bgetenv\s*\(/i,
+  /\bjava\b[\s\S]*\bSystem\.getenv\s*\(/i,
+  /\bperl\b[\s\S]*\bENV\s*\{/i,
+]
 
 export function createEnvGuard(
   config: GuardConfig,
@@ -88,7 +104,17 @@ export function createEnvGuard(
     }
 
     if (input.tool === "bash") {
-      const cmd = String(args.command ?? "").toLowerCase()
+      const rawCommand = String(args.command ?? "")
+      const cmd = rawCommand.toLowerCase()
+
+      for (const pattern of ENV_VALUE_READ_PATTERNS) {
+        if (pattern.test(rawCommand)) {
+          throw new Error(
+            `[varlock] Blocked: bash command appears to read environment variable values at runtime. ` +
+              `Use the load_env or load_secrets tool instead.`,
+          )
+        }
+      }
 
       for (const pattern of bashDeny) {
         if (cmd.includes(pattern.toLowerCase())) {
@@ -104,7 +130,7 @@ export function createEnvGuard(
           `(cat|less|more|head|tail|bat|vim?|nano|code|type|get-content|select-string)\\s+\\S*${escapeRegex(sp)}`,
           "i",
         )
-        if (fileAccessRe.test(String(args.command ?? ""))) {
+        if (fileAccessRe.test(rawCommand)) {
           throw new Error(
             `[varlock] Blocked: bash command appears to read a sensitive file (*${sp}*). ` +
               `Use the load_env or load_secrets tool instead.`,
@@ -113,7 +139,7 @@ export function createEnvGuard(
       }
 
       if (compiledGlobs.length > 0) {
-        const tokens = extractPathTokens(String(args.command ?? ""))
+        const tokens = extractPathTokens(rawCommand)
         for (const token of tokens) {
           for (const { source, regex } of compiledGlobs) {
             if (regex.test(token)) {
