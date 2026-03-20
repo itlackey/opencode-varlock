@@ -1,6 +1,6 @@
 # opencode-varlock
 
-OpenCode plugin that gives agents access to secrets without revealing the values. The plugin leverages [varlock](varlock.dev) and [opencode](opencode.ai) features to provide a multi-layered defense against intentional and accidental secret leakage by OpenCode agents.
+OpenCode plugin that gives agents access to secrets without revealing the values. The plugin leverages [varlock](https://varlock.dev) and [opencode](https://opencode.ai) features to provide a multi-layered defense against intentional and accidental secret leakage by OpenCode agents.
 
 > [!Important]
 > This plugin is still early in development, and there is active work underway to improve its security model and edge-case protections. PRs, issue reports, and security feedback are very welcome.
