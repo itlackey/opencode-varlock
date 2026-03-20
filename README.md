@@ -1,8 +1,8 @@
 # opencode-varlock
 
-OpenCode plugin that gives agents access to environment variables without revealing secret values.
+OpenCode plugin that gives agents access to secrets without revealing the values. The plugin leverages [varlock](varlock.dev) and [opencode](opencode.ai) features to provide a multi-layered defense against intentional and accidental secret leakage by OpenCode agents.
 
-> Warning
+> [!Important]
 > This plugin is still early in development, and there is active work underway to improve its security model and edge-case protections. PRs, issue reports, and security feedback are very welcome.
 
 ## What it does
@@ -25,9 +25,35 @@ Add the package to your `opencode.json` file:
 
 ## Configuration
 
+### Permissions
+In addition to adding the plugin to the array, we recommend adding some additional permission settings to your config. There are a few recommended "presets" in the [assets/permissions.json](assets/permissions.json) file, but here is a basic example:
+
+```
+"permission": {
+  "bash": {
+    "cat *.env*": "deny",
+    "less *.env*": "deny",
+    "more *.env*": "deny",
+    "head *.env*": "deny",
+    "tail *.env*": "deny",
+    "grep * .env*": "deny",
+    "echo $*": "deny",
+    "python*getenv*": "deny",
+    "python*os.environ*": "deny",
+    "node*process.env*": "deny",
+    "printenv*": "deny",
+    "env": "deny",
+    "export -p": "deny",
+    "source .env*": "deny"
+  }
+}
+```
+
+### Plugin Config
+
 `varlock.config.json` is optional.
 
-If you do not provide one, the plugin uses its built-in defaults from [assets/varlock.config.json](assets/varlock.config.json). Create a local config only when you want to override those defaults.
+If you do not provide one, the plugin uses its built-in defaults from [assets/varlock.config.json](assets/varlock.config.json). Create a local config and place it in your `.opencode` or `~/.config/opencode` directory when you want to override those defaults.
 
 Quick example:
 
@@ -41,11 +67,6 @@ Quick example:
 }
 ```
 
-Useful files:
-- default config: `assets/varlock.config.json`
-- JSON schema: `assets/varlock.schema.json`
-- recommended permission configurations: `assets/permissions.json`
-
 ## Docs
 
 - setup and overrides: `docs/configuration.md`
@@ -54,14 +75,10 @@ Useful files:
 - exported APIs and tools: `docs/api.md`
 - Docker + pass guide: `docs/docker-pass-guide.md`
 
-## Repo layout
-
-```text
-src/    TypeScript source
-assets/ Packaged JSON assets
-docs/   Guides and reference docs
-tests/  Unit and integration tests
-```
+## Useful files:
+- default config: `assets/varlock.config.json`
+- JSON schema: `assets/varlock.schema.json`
+- recommended permission configurations: `assets/permissions.json`
 
 ## License
 
