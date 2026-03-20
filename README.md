@@ -108,6 +108,18 @@ assets/ JSON assets shipped with the npm package
 docs/  Setup and integration guides
 ```
 
+## Testing
+
+```bash
+npm run test:unit
+npm run test:integration
+npm run test:coverage
+```
+
+- `test:unit` covers config, guard, tools, and plugin registration
+- `test:integration` starts a real OpenCode server through `@opencode-ai/sdk` and verifies the plugin inside real sessions
+- `test:coverage` emits text, HTML, and LCOV coverage reports under `coverage/`
+
 ### Full config reference
 
 ```json

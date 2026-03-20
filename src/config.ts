@@ -9,7 +9,7 @@
  */
 
 import { existsSync, readFileSync } from "fs"
-import { resolve } from "path"
+import { isAbsolute, resolve } from "path"
 
 export type GuardConfig = {
   enabled: boolean
@@ -108,7 +108,7 @@ export function loadConfig(
 
   merged = deepMerge(merged, overrides as any)
 
-  if (merged.env.allowedRoot && !resolve(merged.env.allowedRoot).startsWith("/")) {
+  if (merged.env.allowedRoot && !isAbsolute(merged.env.allowedRoot)) {
     merged.env.allowedRoot = resolve(cwd, merged.env.allowedRoot)
   } else if (merged.env.allowedRoot) {
     merged.env.allowedRoot = resolve(merged.env.allowedRoot)
