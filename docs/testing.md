@@ -20,7 +20,7 @@ npm run test:coverage
   - starts a real OpenCode server via `@opencode-ai/sdk`
   - loads the built plugin into real temp projects
   - verifies `load_env`, `load_secrets`, and `secret_status`
-  - includes a regression for runtime env-read blocking in a real session
+  - keeps the runtime env-read tool-call regression as an opt-in test because model-driven tool-call behavior can be flaky across CI environments
 
 - `test:coverage`
   - runs unit tests with coverage
@@ -32,6 +32,12 @@ npm run test:coverage
 The integration suite requires the OpenCode CLI to be available.
 
 The GitHub test workflow installs it before running integration tests.
+
+To run the opt-in model-driven tool-call regression locally:
+
+```bash
+RUN_OPENCODE_TOOLCALL_E2E=1 npm run test:integration
+```
 
 ## Validation
 

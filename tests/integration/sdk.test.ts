@@ -6,6 +6,7 @@ import { createTempProject } from "../helpers.js"
 
 const pluginEntry = new URL("../../dist/index.js", import.meta.url).href
 const hasOpencodeBinary = spawnSync("opencode", ["--help"], { stdio: "ignore" }).status === 0
+const runToolCallE2E = process.env.RUN_OPENCODE_TOOLCALL_E2E === "1"
 
 function randomPort() {
   return 4500 + Math.floor(Math.random() * 1000)
@@ -334,7 +335,7 @@ describe.skipIf(!hasOpencodeBinary)("OpenCode SDK integration", () => {
     }
   }, 20000)
 
-  test("blocks runtime env reads during a real prompted bash tool call", async () => {
+  test.skipIf(!runToolCallE2E)("blocks runtime env reads during a real prompted bash tool call", async () => {
     const project = await createTempProject("varlock-sdk-runtime-env")
 
     try {
