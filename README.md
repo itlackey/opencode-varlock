@@ -28,23 +28,25 @@ Add the package to your `opencode.json` file:
 ### Permissions
 In addition to adding the plugin to the array, we recommend adding some additional permission settings to your config. There are a few recommended "presets" in the [assets/permissions.json](assets/permissions.json) file, but here is a basic example:
 
-```
-"permission": {
-  "bash": {
-    "cat *.env*": "deny",
-    "less *.env*": "deny",
-    "more *.env*": "deny",
-    "head *.env*": "deny",
-    "tail *.env*": "deny",
-    "grep * .env*": "deny",
-    "echo $*": "deny",
-    "python*getenv*": "deny",
-    "python*os.environ*": "deny",
-    "node*process.env*": "deny",
-    "printenv*": "deny",
-    "env": "deny",
-    "export -p": "deny",
-    "source .env*": "deny"
+```json
+{
+  "permission": {
+    "bash": {
+      "cat *.env*": "deny",
+      "less *.env*": "deny",
+      "more *.env*": "deny",
+      "head *.env*": "deny",
+      "tail *.env*": "deny",
+      "grep * .env*": "deny",
+      "echo $*": "deny",
+      "python*getenv*": "deny",
+      "python*os.environ*": "deny",
+      "node*process.env*": "deny",
+      "printenv*": "deny",
+      "env": "deny",
+      "export -p": "deny",
+      "source .env*": "deny"
+    }
   }
 }
 ```
