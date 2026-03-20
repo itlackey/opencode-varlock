@@ -157,6 +157,31 @@ function writeSse(res: ServerResponseLike, payload: unknown) {
 
 type ServerResponseLike = Pick<import("node:http").ServerResponse, "write">
 
+async function waitForToolPart(
+  client: ReturnType<typeof createOpencodeClient>,
+  sessionID: string,
+  tool: string,
+  timeoutMs = 5000,
+) {
+  const started = Date.now()
+
+  while (Date.now() - started < timeoutMs) {
+    const messages = await client.session.messages({
+      path: { id: sessionID },
+    })
+
+    const part = messages.data
+      .flatMap((message) => message.parts)
+      .find((item) => item.type === "tool" && item.tool === tool)
+
+    if (part) return part
+
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+
+  return undefined
+}
+
 describe.skipIf(!hasOpencodeBinary)("OpenCode SDK integration", () => {
   let server: Awaited<ReturnType<typeof createOpencodeServer>> | undefined
   let cliDir: Awaited<ReturnType<typeof createTempProject>> | undefined
@@ -352,7 +377,7 @@ describe.skipIf(!hasOpencodeBinary)("OpenCode SDK integration", () => {
       })
 
       const session = await client.session.create()
-      const response = await client.session.prompt({
+      await client.session.prompt({
         path: { id: session.data.id },
         body: {
           parts: [
@@ -364,13 +389,7 @@ describe.skipIf(!hasOpencodeBinary)("OpenCode SDK integration", () => {
         },
       })
 
-      const messages = await client.session.messages({
-        path: { id: session.data.id },
-      })
-
-      const toolPart = messages.data
-        .flatMap((message) => message.parts)
-        .find((part) => part.type === "tool" && part.tool === "bash")
+      const toolPart = await waitForToolPart(client, session.data.id, "bash")
 
       expect(toolPart).toBeDefined()
       expect(toolPart?.state.status).toBe("error")

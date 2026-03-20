@@ -11,6 +11,12 @@
 import { existsSync, readFileSync } from "fs"
 import { isAbsolute, resolve } from "path"
 
+export type ConfigLogger = (input: {
+  level: "debug" | "info" | "warn" | "error"
+  message: string
+  extra?: Record<string, unknown>
+}) => void | Promise<void>
+
 export type GuardConfig = {
   enabled: boolean
   sensitivePatterns: string[]
@@ -85,6 +91,7 @@ const CONFIG_FILENAMES = [
 export function loadConfig(
   cwd: string,
   overrides: DeepPartial<PluginConfig> = {},
+  logger?: ConfigLogger,
 ): PluginConfig {
   let merged = structuredClone(DEFAULT_CONFIG)
 
@@ -99,9 +106,20 @@ export function loadConfig(
         delete parsed.$comment
 
         merged = deepMerge(merged, parsed)
-        console.log(`[varlock] Loaded config from ${filepath}`)
+        logger?.({
+          level: "info",
+          message: "loaded config",
+          extra: { filepath },
+        })
       } catch (err: any) {
-        console.warn(`[varlock] Failed to parse ${filepath}: ${err.message}`)
+        logger?.({
+          level: "warn",
+          message: "failed to parse config",
+          extra: {
+            filepath,
+            error: err instanceof Error ? err.message : String(err),
+          },
+        })
       }
     }
   }

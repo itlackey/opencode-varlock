@@ -1,5 +1,5 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
-import { loadConfig, type PluginConfig, type DeepPartial } from "./config.js"
+import { loadConfig, type PluginConfig, type DeepPartial, type ConfigLogger } from "./config.js"
 import { createEnvGuard } from "./guard.js"
 import {
   createLoadEnvTool,
@@ -14,10 +14,21 @@ export const VarlockPlugin: Plugin = async (ctx) => {
 export function createVarlockPlugin(
   overrides: DeepPartial<PluginConfig> = {},
 ): Plugin {
-  return async ({ $, project, directory }) => {
+  return async ({ $, client, project, directory }) => {
     const cwd = directory ?? process.cwd()
 
-    const config = loadConfig(cwd, overrides)
+    const log: ConfigLogger = async ({ level, message, extra }) => {
+      await client.app.log({
+        body: {
+          service: "opencode-varlock",
+          level,
+          message,
+          extra,
+        },
+      })
+    }
+
+    const config = loadConfig(cwd, overrides, log)
 
     let varlockAvailable = config.varlock.enabled
     if (!varlockAvailable && config.varlock.autoDetect) {
@@ -25,9 +36,11 @@ export function createVarlockPlugin(
         const result = await $`which ${config.varlock.command}`.quiet()
         varlockAvailable = result.exitCode === 0
         if (varlockAvailable) {
-          console.log(
-            `[varlock] Auto-detected "${config.varlock.command}" CLI`,
-          )
+          await log({
+            level: "info",
+            message: "auto-detected varlock cli",
+            extra: { command: config.varlock.command },
+          })
         }
       } catch {
         varlockAvailable = false
@@ -58,9 +71,14 @@ export function createVarlockPlugin(
             ? `${config.guard.sensitivePatterns.length} patterns, ${config.guard.sensitiveGlobs.length} globs`
             : "disabled"
 
-          console.log(
-            `[varlock] Sources: ${sources.join(", ") || "none"} | Guard: ${guardStatus}`,
-          )
+          await log({
+            level: "info",
+            message: "session created",
+            extra: {
+              sources: sources.join(", ") || "none",
+              guard: guardStatus,
+            },
+          })
         }
       },
     }

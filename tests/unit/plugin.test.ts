@@ -13,7 +13,11 @@ describe("plugin", () => {
       })
 
       const hooks = await plugin({
-        client: {} as any,
+        client: {
+          app: {
+            log: async () => ({})
+          }
+        } as any,
         project: {} as any,
         worktree: project.root,
         directory: project.root,
