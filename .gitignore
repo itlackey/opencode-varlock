@@ -3,3 +3,5 @@ dist/
 *.tgz
 npm-debug.log*
 coverage/
+.env.openpalm
+.env
