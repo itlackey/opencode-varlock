@@ -1,5 +1,5 @@
 {
-  "$schema": "./node_modules/opencode-varlock/assets/varlock.schema.json",
+  "$schema": "https://raw.githubusercontent.com/itlackey/opencode-varlock/main/assets/varlock.schema.json",
   "$comment": "opencode-varlock configuration. Place in project root or .opencode/",
 
   "guard": {
