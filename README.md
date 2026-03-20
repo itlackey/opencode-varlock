@@ -1,5 +1,8 @@
 # opencode-varlock
 
+[![npm version](https://img.shields.io/npm/v/opencode-varlock)](https://www.npmjs.com/package/opencode-varlock)
+[![CI](https://github.com/itlackey/opencode-varlock/actions/workflows/test.yml/badge.svg)](https://github.com/itlackey/opencode-varlock/actions/workflows/test.yml)
+
 OpenCode plugin that gives agents access to secrets without revealing the values. The plugin leverages [varlock](https://varlock.dev) and [opencode](https://opencode.ai) features to provide a multi-layered defense against intentional and accidental secret leakage by OpenCode agents.
 
 > [!Important]
