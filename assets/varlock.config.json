@@ -13,7 +13,8 @@
       ".pem",
       ".key",
       "credentials",
-      ".pgpass"
+      ".pgpass",
+      "varlock.config"
     ],
 
     "sensitiveGlobs": [
@@ -26,7 +27,9 @@
       "**/credentials",
       "**/credentials.*",
       "**/.pgpass",
-      "secrets/**"
+      "secrets/**",
+      "**/varlock.config.json",
+      "**/.opencode/varlock.config.json"
     ],
 
     "bashDenyPatterns": [],
@@ -43,7 +46,7 @@
   },
 
   "varlock": {
-    "$comment": "Varlock integration - pull secrets from pass, Azure KV, AWS, 1Password, etc.",
+    "$comment": "Varlock integration - uses varlock load/printenv to pull secrets from configured backends",
 
     "enabled": false,
     "autoDetect": true,

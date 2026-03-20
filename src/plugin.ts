@@ -1,6 +1,7 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
 import { loadConfig, type PluginConfig, type DeepPartial, type ConfigLogger } from "./config.js"
 import { createEnvGuard } from "./guard.js"
+import { createSecretRegistry } from "./scrubber.js"
 import {
   createLoadEnvTool,
   createLoadSecretsTool,
@@ -47,14 +48,15 @@ export function createVarlockPlugin(
       }
     }
 
+    const registry = createSecretRegistry()
     const tools: Record<string, ReturnType<typeof tool>> = {}
 
     if (config.env.enabled) {
-      tools.load_env = createLoadEnvTool(config.env)
+      tools.load_env = createLoadEnvTool(config.env, registry)
     }
 
     if (varlockAvailable) {
-      tools.load_secrets = createLoadSecretsTool($, config.varlock)
+      tools.load_secrets = createLoadSecretsTool($, config.varlock, registry)
       tools.secret_status = createSecretStatusTool($, config.varlock)
     }
 
@@ -85,6 +87,49 @@ export function createVarlockPlugin(
 
     if (config.guard.enabled) {
       hookResult["tool.execute.before"] = createEnvGuard(config.guard)
+    }
+
+    hookResult["tool.execute.after"] = async (input: any, output: any) => {
+      // Scrub secret values from tool output
+      if (registry.size() > 0) {
+        if (typeof output.result === "string") {
+          output.result = registry.scrub(output.result)
+        }
+        if (typeof output.error === "string") {
+          output.error = registry.scrub(output.error)
+        }
+      }
+
+      // After file write/edit, run varlock scan to check for leaked secrets
+      if (varlockAvailable && (input.tool === "write" || input.tool === "edit")) {
+        const filePath = output.args?.filePath ?? output.args?.path ?? output.args?.file
+        if (filePath) {
+          try {
+            const scanResult = await $`${config.varlock.command} scan ${filePath}`.quiet()
+            if (scanResult.exitCode !== 0) {
+              await log({
+                level: "warn",
+                message: "varlock scan detected potential secret leak in written file",
+                extra: { file: filePath },
+              })
+            }
+          } catch {
+            // scan not available or failed, non-critical
+          }
+        }
+      }
+    }
+
+    hookResult["shell.env"] = async (_input: any, _output: any) => {
+      // Log which secret-managed env vars are being passed to shell
+      // This is observability, not blocking — the guard handles blocking
+      if (registry.size() > 0) {
+        await log({
+          level: "debug",
+          message: "shell execution with managed secrets in environment",
+          extra: { managedVarCount: registry.size() },
+        })
+      }
     }
 
     return hookResult

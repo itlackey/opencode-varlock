@@ -1,10 +1,26 @@
 import { tool } from "@opencode-ai/plugin"
-import { readFileSync, existsSync } from "fs"
+import { readFileSync, existsSync, realpathSync } from "fs"
 import { resolve } from "path"
 import type { EnvConfig, VarlockConfig } from "./config.js"
+import type { SecretRegistry } from "./scrubber.js"
 
-export function createLoadEnvTool(envConfig: EnvConfig) {
-  const allowedRoot = resolve(envConfig.allowedRoot)
+const SAFE_INPUT_RE = /^[a-zA-Z0-9_.\-\/]+$/
+
+function validateInput(value: string, label: string): void {
+  if (!SAFE_INPUT_RE.test(value)) {
+    throw new Error(
+      `[varlock] Invalid ${label}: "${value}". Only alphanumeric, hyphens, underscores, dots, and slashes are allowed.`,
+    )
+  }
+}
+
+export function createLoadEnvTool(envConfig: EnvConfig, registry?: SecretRegistry) {
+  let allowedRoot: string
+  try {
+    allowedRoot = realpathSync(resolve(envConfig.allowedRoot))
+  } catch {
+    allowedRoot = resolve(envConfig.allowedRoot)
+  }
 
   return tool({
     description: [
@@ -43,7 +59,15 @@ export function createLoadEnvTool(envConfig: EnvConfig) {
         throw new Error(`[varlock] File not found: ${envPath}`)
       }
 
-      const content = readFileSync(envPath, "utf-8")
+      const realPath = realpathSync(envPath)
+      if (!realPath.startsWith(allowedRoot)) {
+        throw new Error(
+          `[varlock] Path "${args.path}" resolves outside the allowed root via symlink. ` +
+            `Only .env files under "${allowedRoot}" are permitted.`,
+        )
+      }
+
+      const content = readFileSync(realPath, "utf-8")
       const loaded: string[] = []
       const skipped: string[] = []
 
@@ -76,6 +100,7 @@ export function createLoadEnvTool(envConfig: EnvConfig) {
         }
 
         process.env[keyPart] = value
+        registry?.register(keyPart, value)
         loaded.push(keyPart)
       }
 
@@ -97,6 +122,7 @@ export function createLoadEnvTool(envConfig: EnvConfig) {
 export function createLoadSecretsTool(
   $: any,
   varlockConfig: VarlockConfig,
+  registry?: SecretRegistry,
 ) {
   const cmd = varlockConfig.command
   const defaultNs = varlockConfig.namespace
@@ -134,16 +160,30 @@ export function createLoadSecretsTool(
     async execute(args) {
       const ns = args.namespace
 
+      if (ns) {
+        validateInput(ns, "namespace")
+      }
+
+      if (args.envPrefix) {
+        validateInput(args.envPrefix, "envPrefix")
+      }
+
       let keyList: string[]
       if (args.keys && args.keys.length > 0) {
+        for (const key of args.keys) {
+          validateInput(key, "key")
+        }
         keyList = args.keys
       } else {
         try {
-          const raw = await $`${cmd} list ${ns}`.text()
-          keyList = raw
-            .trim()
-            .split("\n")
-            .filter((k: string) => k.length > 0)
+          const raw = await $`${cmd} load --format json`.text()
+          const parsed = JSON.parse(raw)
+          keyList = Object.keys(parsed)
+          if (ns) {
+            keyList = keyList.filter((k: string) =>
+              k.toLowerCase().startsWith(ns.toLowerCase()),
+            )
+          }
         } catch (err: any) {
           throw new Error(
             `[varlock] Failed to list keys in namespace "${ns}": ${err.message}`,
@@ -166,9 +206,10 @@ export function createLoadSecretsTool(
         }
 
         try {
-          const value = (await $`${cmd} get ${ns}/${key}`.text()).trim()
+          const value = (await $`${cmd} printenv ${key}`.text()).trim()
           if (value) {
             process.env[envName] = value
+            registry?.register(envName, value)
             loaded.push(envName)
           }
         } catch {
@@ -221,13 +262,20 @@ export function createSecretStatusTool(
     async execute(args) {
       const ns = args.namespace
 
+      if (ns) {
+        validateInput(ns, "namespace")
+      }
+
       let available: string[]
       try {
-        const raw = await $`${cmd} list ${ns}`.text()
-        available = raw
-          .trim()
-          .split("\n")
-          .filter((k: string) => k.length > 0)
+        const raw = await $`${cmd} load --format json`.text()
+        const parsed = JSON.parse(raw)
+        available = Object.keys(parsed)
+        if (ns) {
+          available = available.filter((k: string) =>
+            k.toLowerCase().startsWith(ns.toLowerCase()),
+          )
+        }
       } catch (err: any) {
         throw new Error(
           `[varlock] Cannot list namespace "${ns}": ${err.message}`,

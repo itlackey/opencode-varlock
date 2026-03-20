@@ -11,9 +11,17 @@ OpenCode plugin that gives agents access to secrets without revealing the values
 ## What it does
 
 - provides `load_env` so agents can use `.env` values without seeing them directly
-- provides `load_secrets` and `secret_status` when the Varlock CLI is available
-- blocks direct secret reads with permission presets plus a `tool.execute.before` guard
-- tries to catch common workarounds like interpreter-based env reads
+- provides `load_secrets` and `secret_status` when the [Varlock CLI](https://varlock.dev) is available
+- uses `varlock load --format json` and `varlock printenv` to integrate with the varlock.dev CLI
+- blocks direct secret reads with a `tool.execute.before` guard covering:
+  - 50+ bash deny patterns and 9 interpreter-based env read detectors
+  - 30+ file processor commands (`sed`, `awk`, `dd`, `tee`, `xxd`, etc.)
+  - shell redirects, encoding/eval bypasses, and variable listing commands
+  - varlock CLI self-exfiltration (`varlock printenv`, `varlock load --format env`)
+- scrubs loaded secret values from tool output via a `tool.execute.after` hook
+- whitelists `.env.schema` and `.env.example` (safe for AI consumption per varlock.dev design)
+- validates config files and prevents agents from tampering with plugin configuration
+- prevents symlink traversal and command injection in tool arguments
 
 ## Install
 
@@ -29,6 +37,7 @@ Add the package to your `opencode.json` file:
 ## Configuration
 
 ### Permissions
+
 In addition to adding the plugin to the array, we recommend adding some additional permission settings to your config. There are a few recommended "presets" in the [assets/permissions.json](assets/permissions.json) file, but here is a basic example:
 
 ```json
@@ -44,11 +53,18 @@ In addition to adding the plugin to the array, we recommend adding some addition
       "echo $*": "deny",
       "python*getenv*": "deny",
       "python*os.environ*": "deny",
+      "python*open*env*": "deny",
       "node*process.env*": "deny",
       "printenv*": "deny",
       "env": "deny",
       "export -p": "deny",
-      "source .env*": "deny"
+      "source .env*": "deny",
+      "varlock printenv*": "deny",
+      "varlock load --show*": "deny",
+      "varlock load --format*": "deny",
+      "varlock load -f*": "deny",
+      "sed * .env*": "deny",
+      "awk * .env*": "deny"
     }
   }
 }
@@ -80,7 +96,8 @@ Quick example:
 - exported APIs and tools: `docs/api.md`
 - Docker + pass guide: `docs/docker-pass-guide.md`
 
-## Useful files:
+## Useful files
+
 - default config: `assets/varlock.config.json`
 - JSON schema: `assets/varlock.schema.json`
 - recommended permission configurations: `assets/permissions.json`

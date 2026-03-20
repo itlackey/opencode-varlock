@@ -22,6 +22,10 @@
       "types": "./dist/tools.d.ts",
       "default": "./dist/tools.js"
     },
+    "./scrubber": {
+      "types": "./dist/scrubber.d.ts",
+      "default": "./dist/scrubber.js"
+    },
     "./plugin": {
       "types": "./dist/plugin.d.ts",
       "default": "./dist/plugin.js"

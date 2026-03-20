@@ -13,6 +13,12 @@ Config lookup order:
 2. `.opencode/varlock.config.json`
 3. programmatic overrides passed to `createVarlockPlugin()`
 
+## Config validation
+
+All config files and programmatic overrides are validated before merging. Invalid values (wrong types, non-boolean `enabled`, non-array patterns) are logged as warnings and removed before merge, so they cannot silently disable protections.
+
+The plugin will never crash due to a malformed config file.
+
 ## Quick start
 
 Copy the bundled template only if you want overrides:
@@ -41,7 +47,8 @@ The copied config template points its `$schema` at `./node_modules/opencode-varl
   "guard": {
     "enabled": true,
     "sensitivePatterns": [
-      ".env", ".secret", ".pem", ".key", "credentials", ".pgpass"
+      ".env", ".secret", ".pem", ".key", "credentials", ".pgpass",
+      "varlock.config"
     ],
     "sensitiveGlobs": [
       "**/.env",
@@ -53,7 +60,9 @@ The copied config template points its `$schema` at `./node_modules/opencode-varl
       "**/credentials",
       "**/credentials.*",
       "**/.pgpass",
-      "secrets/**"
+      "secrets/**",
+      "**/varlock.config.json",
+      "**/.opencode/varlock.config.json"
     ],
     "bashDenyPatterns": [],
     "blockedReadTools": ["read", "grep", "glob", "view"],
@@ -82,8 +91,12 @@ The copied config template points its `$schema` at `./node_modules/opencode-varl
 | `sensitivePatterns` | `string[]` | built-in list | Substring matches blocked anywhere in a path |
 | `sensitiveGlobs` | `string[]` | built-in list | Path-aware glob rules |
 | `bashDenyPatterns` | `string[]` | `[]` | Extra bash substrings to deny |
-| `blockedReadTools` | `string[]` | `[`read`,`grep`,`glob`,`view`]` | Tools that trigger sensitive read checks |
-| `blockedWriteTools` | `string[]` | `[`write`,`edit`]` | Tools that trigger sensitive write checks |
+| `blockedReadTools` | `string[]` | `[read, grep, glob, view]` | Tools that trigger sensitive read checks |
+| `blockedWriteTools` | `string[]` | `[write, edit]` | Tools that trigger sensitive write checks |
+
+The guard automatically whitelists `.env.schema`, `.env.example`, and `.env.sample` files, since varlock.dev designed `.env.schema` to be safe for AI agent consumption.
+
+The default `sensitivePatterns` include `varlock.config` to prevent agents from tampering with the plugin's own configuration.
 
 ### `env`
 
@@ -91,6 +104,8 @@ The copied config template points its `$schema` at `./node_modules/opencode-varl
 |---|---|---|---|
 | `enabled` | `boolean` | `true` | Registers `load_env` |
 | `allowedRoot` | `string` | `"."` | Containment boundary for `.env` loading |
+
+The `allowedRoot` boundary is enforced with `realpathSync` to prevent symlink traversal.
 
 ### `varlock`
 
@@ -106,11 +121,14 @@ Varlock resolution:
 - `enabled: false, autoDetect: true` probes for the CLI
 - `enabled: false, autoDetect: false` disables Varlock entirely
 
+The plugin uses `varlock load --format json` to list available variables and `varlock printenv <key>` to retrieve individual values.
+
 ## Merge behavior
 
 - Arrays are replaced, not concatenated
 - Objects are deep-merged
 - Scalars overwrite previous values
+- Invalid types are removed before merge (with warnings logged)
 
 Example:
 
@@ -150,3 +168,5 @@ export default createVarlockPlugin({
 Permission presets live in `assets/permissions.json`.
 
 They complement the guard hook by handling obvious fast-path command patterns before the plugin catches deeper edge cases.
+
+Presets include deny rules for varlock CLI exfiltration commands (`varlock printenv`, `varlock load --show-all`), file processors (`sed`, `awk`, `dd`), and encoding bypasses (`base64 -d | bash`).

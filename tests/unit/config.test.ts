@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { writeFile, mkdir } from "node:fs/promises"
-import { loadConfig, deepMerge, DEFAULT_CONFIG } from "../../src/config.js"
+import { loadConfig, deepMerge, DEFAULT_CONFIG, validateConfig } from "../../src/config.js"
 import { createTempProject } from "../helpers.js"
 
 describe("config", () => {
@@ -46,5 +46,76 @@ describe("config", () => {
     } finally {
       await project.dispose()
     }
+  })
+
+  // ── Config validation ────────────────────────────────────────────────
+
+  describe("validateConfig", () => {
+    test("returns errors for non-boolean guard.enabled", () => {
+      const errors = validateConfig({
+        guard: { enabled: "yes" },
+      })
+      expect(errors).toContain(
+        "guard.enabled must be boolean, got string",
+      )
+    })
+
+    test("returns errors for non-array sensitivePatterns", () => {
+      const errors = validateConfig({
+        guard: { sensitivePatterns: "not-an-array" },
+      })
+      expect(errors).toContain("guard.sensitivePatterns must be an array")
+    })
+
+    test("returns no errors for valid config", () => {
+      const errors = validateConfig({
+        guard: {
+          enabled: true,
+          sensitivePatterns: [".env"],
+          sensitiveGlobs: ["**/.env"],
+          bashDenyPatterns: [],
+          blockedReadTools: ["read"],
+          blockedWriteTools: ["write"],
+        },
+        env: {
+          enabled: true,
+          allowedRoot: ".",
+        },
+        varlock: {
+          enabled: false,
+          autoDetect: true,
+          command: "varlock",
+          namespace: "app",
+        },
+      })
+      expect(errors).toEqual([])
+    })
+
+    test("loadConfig sanitizes invalid values before merge (boolean field set to string)", async () => {
+      const project = await createTempProject("varlock-sanitize")
+
+      try {
+        // Write a config file where guard.enabled is a string instead of boolean
+        await writeFile(
+          project.path("varlock.config.json"),
+          JSON.stringify({
+            guard: { enabled: "true" },
+          }),
+        )
+
+        const config = loadConfig(project.root)
+
+        // The sanitizer should have removed the invalid "true" string,
+        // so the default boolean true should be preserved
+        expect(config.guard.enabled).toBe(true)
+        expect(typeof config.guard.enabled).toBe("boolean")
+      } finally {
+        await project.dispose()
+      }
+    })
+
+    test("varlock.config is in default sensitivePatterns", () => {
+      expect(DEFAULT_CONFIG.guard.sensitivePatterns).toContain("varlock.config")
+    })
   })
 })
