@@ -2,6 +2,9 @@
 
 OpenCode plugin that gives agents access to environment variables **without revealing secret values**.
 
+> Warning
+> This plugin is still early in development, and there is active work underway to improve its security model and edge-case protections. PRs, issue reports, and security feedback are very welcome.
+
 ## The Problem
 
 When an AI agent needs secrets (database URLs, API keys, tokens) to run your code, the obvious approach — letting it read `.env` — puts every secret directly into its context window. It can then echo them, log them, or hallucinate them into committed code.
@@ -49,16 +52,6 @@ npm install opencode-varlock
 ```
 
 The published package ships compiled ESM in `dist/`, and the root entry exports only the plugin itself so OpenCode can load it cleanly through the normal npm plugin resolution flow.
-
-### As a local plugin
-
-Reference the package directory locally after building it:
-
-```json
-{
-  "plugin": ["./path/to/opencode-varlock"]
-}
-```
 
 ## Configuration
 
