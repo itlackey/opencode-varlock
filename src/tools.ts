@@ -24,10 +24,10 @@ export function createLoadEnvTool(envConfig: EnvConfig, registry?: SecretRegistr
 
   return tool({
     description: [
-      "Load environment variables from a .env file into the running process.",
-      "Returns the names of variables that were set - never the values.",
-      "The agent can then write code that references process.env.VAR_NAME",
-      "without ever seeing the actual secret.",
+      "Load environment variables from an ad-hoc .env file in the project working directory.",
+      "Only files under the configured allowed root (default: working directory) are permitted.",
+      "For system-managed vault secrets (API keys, tokens), use a dedicated vault tool if available.",
+      "Returns only the names of variables that were set - never the values.",
     ].join(" "),
     args: {
       path: tool.schema
